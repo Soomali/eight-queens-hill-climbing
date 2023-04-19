@@ -1,9 +1,7 @@
 import random
 #table is an 8x8 array where 1 representing
 #a queen    
-import threading
-from multiprocessing import Process
-
+import time;
 TABLE_SIZE = 8
 
 
@@ -53,7 +51,7 @@ class SolutionChecker():
 
 
     def __intersects_lower_diagonally(self,start_x,start_y,x,y):
-        while start_x < TABLE_SIZE and start_y >= 0:
+        while start_x < TABLE_SIZE and start_x > 0 and start_y >= 0:
             if start_x == x and start_y == y:
                 start_x -= 1
                 start_y -= 1
@@ -112,13 +110,13 @@ def generate_random_board():
     q_size = TABLE_SIZE
     
     board = [[0 for _ in range(q_size)] for __ in range(q_size)]
-
+    i = 0
     while q_size > 0:
         x = random.randint(0,TABLE_SIZE - 1)
-        y = random.randint(0,TABLE_SIZE - 1)
-        if board[x][y] == 0:
-            board[x][y] = 1
+        if board[x][i] == 0:
+            board[x][i] = 1
             q_size -= 1
+            i += 1
 
     return Board(board)    
 
@@ -145,63 +143,77 @@ class HillClimber():
         
         solution = SolutionChecker(self.board).check_solution()
         i = 0
+        k = 0
         j = 0
         while solution != 0:
             solution,is_changed = self.__take_step(solution,i)
             i+=1
+            k+=1
             if is_changed:
                 i = 0
-            if i == self.max_steps_on_same_solution * (8 - solution):
+            if i == self.max_steps_on_same_solution:
                 self.board = generate_random_board()
-                print(f'Changing board,solution was {solution}')
                 solution = SolutionChecker(self.board).check_solution()
                 i = 0
                 j+= 1
             
-        return i,j
+        return k,j
 
     def __take_step(self,solution,steps_at_same_solution):
-        step = self.__step(steps_at_same_solution)
+        step = self.__step(solution)
         step_progress = SolutionChecker(step).check_solution()
-        if solution > step_progress or (steps_at_same_solution >= self.max_steps_on_same_solution / 2 and solution == step_progress):
+        if solution > step_progress:
             solution = step_progress
             
             self.board = step
             return solution,True
         return solution,False
     
-    def __step(self,solution):
-        copy = Board(self.board.board.copy())
-        self.__replace_random(copy)
-        return copy
+    def __step(self,solution:int):
+        copy = Board(self.board.board.copy())         
+        return self.__replace(copy,solution)
 
-    def __replace_random(self, copy:Board):
+
+    def __replace(self, copy:Board,solution:int):
         x,y = random.choice(copy.get_intersecting_queen_positions())
 
-        x_replacement = random.randint(0,TABLE_SIZE - 1)
-        y_replacement = random.randint(0,TABLE_SIZE - 1)
-
-        while copy.board[x_replacement][y_replacement] != 0: 
-            x_replacement = random.randint(0,TABLE_SIZE - 1)
-            y_replacement = random.randint(0,TABLE_SIZE - 1)
-        
-        copy.board[x][y],copy.board[x_replacement][y_replacement] = copy.board[x_replacement][y_replacement],copy.board[x][y]
-
+        checker = SolutionChecker(copy)
+        copy_solution = checker.check_solution()
+        copy.board[x][y] = 0
+        start = TABLE_SIZE -1
+        x_replacement = start
+        while start >= 0 and copy_solution >= solution and solution != 0: 
+            x_replacement = start
+            copy.board[x_replacement][y] = 1
+            start -= 1
+            checker.table = copy.board
+            copy_solution = checker.check_solution()
+            
+            copy.board[x_replacement][y] = 0
+        copy.board[x_replacement][y] = 1
+        return copy
 
 
 def run_climber():
-    max_step_size = random.randint(1000,6000)
-    print(f'max_step_size:{max_step_size}')
+    max_step_size = 20
+    st = time.time()
     climber = HillClimber(step_size=100000,max_steps_on_same_solution=max_step_size)
     result = climber.climb_until_solution()
-    print(f'took {result[0]} steps and {result[1]} restarts to find solution. max step size was {max_step_size}')
-    print(f'{climber.board}')
+    end = time.time()
 
-if __name__ == '__main__':
-    processes = [Process(target=run_climber) for i in range(10)]
-    for i in processes:
-        i.start()
+    print(f'  {result[0]}{" " * (29 - len(str(result[0])))}{result[1]}{" " * (27 - len(str(result[1])))}{int((end - st) * 1000)}')
+print(len("                    "))
+print(' Steps                      Restarts                      Time')
+print('---------------------------------------------------------------')
+for i in range(TABLE_SIZE):
+    run_climber()
+# text = SolutionChecker(Board([[0, 0, 0, 0, 0, 1, 0, 0],
+#  [0, 1, 0, 0, 0, 0, 0, 0],
+#  [0, 0, 0, 0, 0, 0, 1, 0],
+#  [1, 0, 0, 0, 0, 0, 0, 0],
+#  [0, 0, 0, 1, 0, 0, 0, 0],
+#  [0, 0, 0, 0, 0, 0, 0, 1],
+#  [0, 0, 0, 0, 1, 0, 0, 0],
+#  [0, 0, 1, 0, 0, 0, 0, 0]]))
 
-    for i in processes:
-        if i.is_alive():
-            i.join()
+# print(text.check_solution())
