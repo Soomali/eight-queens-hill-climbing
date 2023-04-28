@@ -1,6 +1,4 @@
 import random
-#table is an 8x8 array where 1 representing
-#a queen    
 import time;
 TABLE_SIZE = 8
 
@@ -87,6 +85,8 @@ class SolutionChecker():
         return total_intersections
 
 
+#table is an 8x8 array where 1 representing
+#a queen    
 class Board():
     def __init__(self,board):
         self.board = board 
@@ -134,7 +134,6 @@ class HillClimber():
         solution = SolutionChecker(self.board).check_solution()
         if solution == 0:
             return 0
-        print(f'initial size: {solution}')
         for i in range(self.step_size):
             solution = self.__take_step(solution)
         return solution
@@ -146,7 +145,7 @@ class HillClimber():
         k = 0
         j = 0
         while solution != 0:
-            solution,is_changed = self.__take_step(solution,i)
+            solution,is_changed = self.__take_step(solution)
             i+=1
             k+=1
             if is_changed:
@@ -159,7 +158,7 @@ class HillClimber():
             
         return k,j
 
-    def __take_step(self,solution,steps_at_same_solution):
+    def __take_step(self,solution):
         step = self.__step(solution)
         step_progress = SolutionChecker(step).check_solution()
         if solution > step_progress:
@@ -202,18 +201,9 @@ def run_climber():
     end = time.time()
 
     print(f'  {result[0]}{" " * (29 - len(str(result[0])))}{result[1]}{" " * (27 - len(str(result[1])))}{int((end - st) * 1000)}')
-print(len("                    "))
+
 print(' Steps                      Restarts                      Time')
 print('---------------------------------------------------------------')
+
 for i in range(TABLE_SIZE):
     run_climber()
-# text = SolutionChecker(Board([[0, 0, 0, 0, 0, 1, 0, 0],
-#  [0, 1, 0, 0, 0, 0, 0, 0],
-#  [0, 0, 0, 0, 0, 0, 1, 0],
-#  [1, 0, 0, 0, 0, 0, 0, 0],
-#  [0, 0, 0, 1, 0, 0, 0, 0],
-#  [0, 0, 0, 0, 0, 0, 0, 1],
-#  [0, 0, 0, 0, 1, 0, 0, 0],
-#  [0, 0, 1, 0, 0, 0, 0, 0]]))
-
-# print(text.check_solution())
